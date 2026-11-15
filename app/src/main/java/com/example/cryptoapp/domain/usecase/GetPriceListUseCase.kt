@@ -1,0 +1,9 @@
+package com.example.cryptoapp.domain.usecase
+
+import androidx.lifecycle.LiveData
+import com.example.cryptoapp.domain.CoinPriceInfo
+import com.example.cryptoapp.domain.repository.CoinRepository
+
+class GetPriceListUseCase(private val repository: CoinRepository) {
+    fun getPriceList(): LiveData<List<CoinPriceInfo>> = repository.getPriceList()
+}
