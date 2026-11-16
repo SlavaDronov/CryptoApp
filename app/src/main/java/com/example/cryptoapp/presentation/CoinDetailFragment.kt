@@ -12,7 +12,7 @@ import com.squareup.picasso.Picasso
 class CoinDetailFragment : Fragment() {
 
     private var _binding: FragmentCoinDetailBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding?: throw RuntimeException("FragmentCoinDetailBinding is null")
     private val viewModel: CoinViewModel by activityViewModels()
 
     override fun onCreateView(

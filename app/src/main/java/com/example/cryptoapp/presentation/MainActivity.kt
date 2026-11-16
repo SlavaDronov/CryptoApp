@@ -3,6 +3,7 @@ package com.example.cryptoapp.presentation
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.example.cryptoapp.R
 import com.example.cryptoapp.databinding.ActivityMainBinding
@@ -25,10 +26,22 @@ class MainActivity : AppCompatActivity() {
                 .commit()
         }
 
-        // В портрете detail_container скрыт, в ландшафте — виден
         if (!isLandscape) {
             binding.detailContainer.visibility = View.GONE
         }
+
+        // Современная обработка кнопки «Назад»
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (!isLandscape && binding.detailContainer.visibility == View.VISIBLE) {
+                    closeDetail()
+                } else {
+                    // Отключаем callback и передаём управление системе
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
 
     fun showDetail(fSym: String) {
@@ -48,19 +61,10 @@ class MainActivity : AppCompatActivity() {
             binding.listContainer.visibility = View.VISIBLE
             binding.detailContainer.visibility = View.GONE
         } else {
-            // В ландшафте просто очищаем правый контейнер
             supportFragmentManager.beginTransaction()
                 .remove(supportFragmentManager.findFragmentById(R.id.detail_container) ?: return)
                 .commit()
         }
         supportFragmentManager.popBackStack()
-    }
-
-    override fun onBackPressed() {
-        if (!isLandscape && binding.detailContainer.visibility == View.VISIBLE) {
-            closeDetail()
-        } else {
-            super.onBackPressed()
-        }
     }
 }

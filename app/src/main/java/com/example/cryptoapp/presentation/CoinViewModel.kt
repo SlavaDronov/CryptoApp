@@ -26,10 +26,7 @@ class CoinViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch {
-            while (true) {
-                loadDataUseCase()
-                delay(10_000)
-            }
+            loadDataUseCase()
         }
     }
 
