@@ -5,5 +5,5 @@ import com.example.cryptoapp.domain.CoinPriceInfo
 import com.example.cryptoapp.domain.repository.CoinRepository
 
 class GetPriceListUseCase(private val repository: CoinRepository) {
-    fun getPriceList(): LiveData<List<CoinPriceInfo>> = repository.getPriceList()
+    operator fun invoke(): LiveData<List<CoinPriceInfo>> = repository.getPriceList()
 }

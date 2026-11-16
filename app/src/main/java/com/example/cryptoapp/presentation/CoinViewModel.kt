@@ -10,6 +10,7 @@ import com.example.cryptoapp.domain.CoinPriceInfo
 import com.example.cryptoapp.domain.usecase.GetDetailInfoUseCase
 import com.example.cryptoapp.domain.usecase.GetPriceListUseCase
 import com.example.cryptoapp.domain.usecase.LoadDataUseCase
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class CoinViewModel(application: Application) : AndroidViewModel(application) {
@@ -21,17 +22,17 @@ class CoinViewModel(application: Application) : AndroidViewModel(application) {
     private val getDetailInfoUseCase = GetDetailInfoUseCase(repository)
     private val loadDataUseCase = LoadDataUseCase(repository)
 
-    val priceList: LiveData<List<CoinPriceInfo>> = getPriceListUseCase.getPriceList()
+    val priceList: LiveData<List<CoinPriceInfo>> = getPriceListUseCase()
 
     init {
         viewModelScope.launch {
             while (true) {
                 loadDataUseCase()
-                kotlinx.coroutines.delay(10_000)
+                delay(10_000)
             }
         }
     }
 
     fun getDetailInfo(fSym: String): LiveData<CoinPriceInfo> =
-        getDetailInfoUseCase.getDetailInfo(fSym)
+        getDetailInfoUseCase(fSym)
 }
