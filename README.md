@@ -1,6 +1,8 @@
 # CryptoApp
 
-Android-приложение для просмотра курсов криптовалют. Загружает данные с CoinGecko Demo API, сохраняет их в Room и отображает в списке с возможностью открыть детали монеты. Поддерживает портретную и ландшафтную ориентации (master-detail).
+Android-приложение для просмотра курсов криптовалют. Загружает данные с **CoinGecko Demo API**, сохраняет их в локальную базу данных Room и отображает в списке с возможностью открыть подробную информацию о монете.
+
+Поддерживает портретную и ландшафтную ориентации (Master-Detail), автоматическую синхронизацию данных в фоновом режиме и обработку ошибок.
 
 ## Скриншоты
 
@@ -15,90 +17,158 @@ Android-приложение для просмотра курсов крипто
 ## Возможности
 
 - Список топ-50 криптовалют с ценой, символом и логотипом.
-- Детальный экран монеты: цена, символ, логотип, время обновления.
-- Master-detail: в портрете — список на весь экран и детали поверх; в ландшафте — список и детали рядом.
-- Кнопка «Закрыть» на экране деталей и обработка кнопки «Назад».
-- Кеширование данных в Room (список сохраняется между запусками).
-- Автоматическая загрузка данных при старте (с периодическим обновлением).
-- ViewBinding вместо findViewById и Kotlin synthetics.
-- ListAdapter + DiffUtil вместо notifyDataSetChanged.
+- Детальный экран монеты: цена, символ, логотип и время обновления.
+- Master-Detail: в портретной ориентации — список на весь экран и детали поверх; в ландшафтной — список и детали рядом.
+- Кнопка «Закрыть» на экране деталей и обработка системной кнопки «Назад».
+- Кеширование данных в Room — список сохраняется между запусками приложения.
+- Автоматическая загрузка данных при старте приложения.
+- Фоновая синхронизация криптовалют с помощью WorkManager.
+- Внедрение зависимостей через Hilt.
+- `HiltWorker` для внедрения зависимостей в фоновые задачи WorkManager.
+- Обработка ошибок в ViewModel и Worker с помощью `try/catch`.
+- ViewBinding вместо `findViewById` и Kotlin synthetics.
+- `ListAdapter` + `DiffUtil` для эффективного обновления списка.
+- Разделение приложения на слои Data, Domain и Presentation.
 
-## Стек
+## Технологический стек
 
-- Язык: Kotlin 2.1.10
-- Сборка: AGP 8.8.0, Gradle 8.10.2
-- compileSdk: 35, minSdk: 21, targetSdk: 35
-- Архитектура: Clean Architecture (data / domain / presentation), MVVM
-- Сеть: Retrofit 2 + Gson, suspend-функции (корутины)
-- БД: Room 2.6.1 (KSP), LiveData, suspend-функции в DAO
-- Асинхронность: Kotlin Coroutines, viewModelScope, lifecycleScope
-- UI: ViewBinding, RecyclerView, Picasso, Material Components
-- API: CoinGecko Demo API (coins/markets)
+- **Язык:** Kotlin 2.1.10
+- **Сборка:** AGP 8.8.0, Gradle 8.10.2
+- **SDK:** compileSdk 35, minSdk 21, targetSdk 35
+- **Архитектура:** Clean Architecture, MVVM
+- **Dependency Injection:** Hilt
+- **Сеть:** Retrofit 2, Gson
+- **База данных:** Room 2.6.1, KSP
+- **Асинхронность:** Kotlin Coroutines, suspend-функции, viewModelScope, lifecycleScope
+- **Фоновая работа:** WorkManager, CoroutineWorker, HiltWorker
+- **UI:** ViewBinding, RecyclerView, ListAdapter, DiffUtil, Picasso, Material Components
+- **API:** CoinGecko Demo API (`coins/markets`)
 
-## Структура проекта
+## Архитектура проекта
 
-```
+```text
 com.example.cryptoapp
 │
 ├── api
-│   ├── ApiFactory.kt              (Retrofit + Gson, BASE_URL)
-│   ├── ApiService.kt              (suspend-эндпоинт CoinGecko, ключ через BuildConfig)
+│   ├── ApiService.kt
 │   └── dto
-│       └── CoinGeckoDto.kt        (DTO ответа CoinGecko)
+│       └── CoinGeckoDto.kt
+│
+├── di
+│   ├── DatabaseModule.kt       (предоставление Room и DAO)
+│   ├── NetworkModule.kt        (Retrofit, Gson, ApiService)
+│   └── RepositoryModule.kt     (связывание Repository)
 │
 ├── data
 │   ├── database
-│   │   ├── AppDatabase.kt         (RoomDatabase, fallbackToDestructiveMigration)
-│   │   ├── CoinPriceInfoDao.kt    (DAO: LiveData + suspend insert)
-│   │   └── CoinPriceInfoDbModel.kt (@Entity)
+│   │   ├── AppDatabase.kt
+│   │   ├── CoinPriceInfoDao.kt
+│   │   └── CoinPriceInfoDbModel.kt
+│   │
 │   ├── mapper
-│   │   └── CoinPriceInfoMapper.kt (DTO <-> DbModel <-> Domain)
+│   │   └── CoinPriceInfoMapper.kt
+│   │
 │   └── repository
-│       └── CoinRepositoryImpl.kt  (сеть + БД + маппер)
+│       └── CoinRepositoryImpl.kt
 │
 ├── domain
-│   ├── CoinPriceInfo.kt           (domain-модель, без @Entity и @SerializedName)
+│   ├── CoinPriceInfo.kt
 │   ├── repository
-│   │   └── CoinRepository.kt      (интерфейс репозитория)
+│   │   └── CoinRepository.kt
 │   └── usecase
 │       ├── GetPriceListUseCase.kt
 │       ├── GetDetailInfoUseCase.kt
 │       └── LoadDataUseCase.kt
 │
-└── presentation
-    ├── MainActivity.kt            (host для master-detail)
-    ├── CoinViewModel.kt           (LiveData + UseCase, без сети и БД)
-    ├── CoinInfoAdapter.kt         (ListAdapter + DiffUtil + ViewBinding)
-    ├── CoinPriceListFragment.kt   (список)
-    └── CoinDetailFragment.kt      (детали + кнопка «Закрыть»)
+├── presentation
+│   ├── MainActivity.kt
+│   ├── CoinViewModel.kt
+│   ├── CoinInfoAdapter.kt
+│   ├── CoinPriceListFragment.kt
+│   └── CoinDetailFragment.kt
+│
+├── work
+│   └── CoinSyncWorker.kt       (фоновая синхронизация)
+│
+└── MyApp.kt                   (инициализация Hilt)
 ```
+
+## Dependency Injection — Hilt
+
+В приложении используется Hilt для внедрения зависимостей.
+
+Основные модули:
+
+- **DatabaseModule** — создание Room Database и предоставление DAO.
+- **NetworkModule** — создание Gson, Retrofit и ApiService.
+- **RepositoryModule** — связывание интерфейса CoinRepository с реализацией CoinRepositoryImpl.
+
+Зависимости внедряются через конструкторы с `@Inject`.
+
+`@HiltAndroidApp` используется для инициализации контейнера зависимостей приложения, а `@AndroidEntryPoint` — для Android-компонентов, участвующих во внедрении зависимостей.
+
+## Фоновая синхронизация — WorkManager
+
+Для фонового обновления данных используется WorkManager.
+
+- `CoinSyncWorker` отвечает за выполнение синхронизации.
+- `CoroutineWorker` позволяет выполнять сетевые операции с использованием корутин.
+- `@HiltWorker` обеспечивает внедрение зависимостей в Worker.
+- `HiltWorkerFactory` используется для создания Worker с зависимостями.
+- Обработка исключений предотвращает неконтролируемое завершение фоновой задачи.
+
+## Обработка ошибок
+
+В `CoinViewModel` и `CoinSyncWorker` предусмотрена обработка исключений через `try/catch`.
+
+Это позволяет обрабатывать ошибки сетевых запросов и фоновой синхронизации без аварийного завершения приложения.
 
 ## Сборка и запуск
 
-1. Откройте проект в Android Studio (актуальная версия).
-2. Дождитесь окончания Gradle Sync.
-3. Запустите приложение на эмуляторе или устройстве (Run).
+1. Откройте проект в Android Studio.
+2. Дождитесь завершения Gradle Sync.
+3. Настройте API-ключ CoinGecko.
+4. Запустите приложение на эмуляторе или Android-устройстве.
 
 ### API-ключ CoinGecko
 
-Приложение использует CoinGecko Demo API. Ключ не хранится в коде — он читается из local.properties и попадает в BuildConfig.COINGECKO_API_KEY.
+Приложение использует CoinGecko Demo API.
 
-1. Зарегистрируйтесь на coingecko.com и получите Demo API-ключ в Developer Dashboard.
-2. В корне проекта откройте local.properties (или создайте, если его нет) и добавьте строку:
-   COINGECKO_API_KEY=ваш_ключ
-3. local.properties уже в .gitignore — ключ не попадёт в репозиторий.
-4. В app/build.gradle ключ читается и передаётся в buildConfigField, а в ApiService используется BuildConfig.COINGECKO_API_KEY.
+Ключ хранится локально и не добавляется непосредственно в исходный код.
 
-### Примечание о версиях
+1. Зарегистрируйтесь на [CoinGecko](https://www.coingecko.com/) и получите Demo API-ключ в Developer Dashboard.
+2. В корне проекта откройте `local.properties` и добавьте:
 
-Проект изначально использовал CryptoCompare API, RxJava и Activity для списка/деталей. В ходе рефакторинга:
+```properties
+COINGECKO_API_KEY=ваш_ключ
+```
 
-- Сеть: CryptoCompare -> CoinGecko Demo API, RxJava -> корутины (suspend).
-- БД: Room с @Entity на DTO -> отдельный CoinPriceInfoDbModel, suspend-вставка.
-- Архитектура: плоская структура -> Clean Architecture (data / domain / presentation), UseCase, маппер.
-- UI: две Activity -> master-detail фрагменты, findViewById -> ViewBinding, notifyDataSetChanged -> ListAdapter + DiffUtil.
-- Ключ API: хардкод -> local.properties + BuildConfig.
+3. Убедитесь, что `local.properties` находится в `.gitignore`.
+4. В `app/build.gradle` ключ передаётся через `buildConfigField`.
+5. `ApiService` использует `BuildConfig.COINGECKO_API_KEY` для авторизации запросов.
+
+**Важно:** не публикуйте API-ключ в GitHub и не добавляйте `local.properties` в коммит.
+
+## История рефакторинга
+
+Проект изначально использовал CryptoCompare API, RxJava и Activity для отображения списка и деталей.
+
+В ходе рефакторинга выполнены следующие изменения:
+
+- **Сеть:** CryptoCompare заменён на CoinGecko Demo API, RxJava заменена Kotlin Coroutines.
+- **База данных:** внедрена Room с отдельной Entity-моделью `CoinPriceInfoDbModel`.
+- **Архитектура:** реализована Clean Architecture с разделением на Data, Domain и Presentation.
+- **Бизнес-логика:** добавлены UseCase и Mapper.
+- **UI:** реализован Master-Detail интерфейс, ViewBinding, ListAdapter и DiffUtil.
+- **Dependency Injection:** добавлен Hilt для управления зависимостями.
+- **Фоновая работа:** добавлен WorkManager с поддержкой HiltWorker.
+- **Обработка ошибок:** добавлена обработка исключений в ViewModel и Worker.
+- **API-ключ:** перенесён из исходного кода в `local.properties` с передачей через BuildConfig.
 
 ## Лицензия
 
-Исходный код основан на учебных материалах курса. Рефакторинг под Clean Architecture, замена API на CoinGecko Demo API, переход на корутины и ViewBinding, а также доработка UI выполнены Вячеславом Дроновым. Проект предназначен для обучения.
+Исходный код основан на учебных материалах курса.
+
+Рефакторинг под Clean Architecture, замена API на CoinGecko Demo API, переход на Kotlin Coroutines, ViewBinding, Hilt и WorkManager, а также доработка UI выполнены Вячеславом Дроновым.
+
+Проект предназначен для обучения и демонстрации практических навыков Android-разработки.
