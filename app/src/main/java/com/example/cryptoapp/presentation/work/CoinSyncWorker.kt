@@ -1,21 +1,23 @@
 package com.example.cryptoapp.presentation.work
 
 import android.content.Context
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.cryptoapp.data.database.AppDatabase
-import com.example.cryptoapp.data.repository.CoinRepositoryImpl
+import com.example.cryptoapp.domain.usecase.LoadDataUseCase
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 
-class CoinSyncWorker(
-    appContext: Context,
-    params: WorkerParameters
+@HiltWorker
+class CoinSyncWorker @AssistedInject constructor(
+    @Assisted appContext: Context,
+    @Assisted params: WorkerParameters,
+    private val loadDataUseCase: LoadDataUseCase
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
         return try {
-            val dao = AppDatabase.getInstance(applicationContext).coinPriceInfoDao()
-            val repository = CoinRepositoryImpl(dao)
-            repository.loadData()
+            loadDataUseCase()
             Result.success()
         } catch (e: Exception) {
             Result.retry()

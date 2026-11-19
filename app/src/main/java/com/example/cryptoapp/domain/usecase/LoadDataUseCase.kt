@@ -1,7 +1,10 @@
 package com.example.cryptoapp.domain.usecase
 
 import com.example.cryptoapp.domain.repository.CoinRepository
+import jakarta.inject.Inject
 
-class LoadDataUseCase(private val repository: CoinRepository) {
+class LoadDataUseCase @Inject constructor(
+    private val repository: CoinRepository
+) {
     suspend operator fun invoke() = repository.loadData()
 }
